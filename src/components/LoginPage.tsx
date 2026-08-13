@@ -52,8 +52,8 @@ export default function LoginPage() {
     'mt-1 w-full rounded-md border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-400 disabled:bg-gray-50';
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-      <div className="w-full max-w-sm">
+    <div className="h-full min-h-dvh overflow-y-auto bg-gray-50 flex items-center justify-center p-4">
+      <div className="w-full max-w-sm my-auto">
         <AuthBrand />
 
         {authMode === 'login' ? (

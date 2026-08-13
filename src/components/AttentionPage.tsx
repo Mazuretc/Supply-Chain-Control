@@ -15,17 +15,17 @@ function AttentionCard({ item }: { item: ErpItem }) {
       }`}
       onClick={() => navigateTo('erp-detail', { erpId: item.id })}
     >
-      <div className="flex items-start justify-between gap-3">
+      <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 mb-1">
+          <div className="flex flex-wrap items-center gap-2 mb-1">
             <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${severity === 'critical' ? 'bg-red-500' : 'bg-amber-400'}`} />
             <span className="font-mono font-semibold text-sm text-indigo-600">{item.erpCode}</span>
             <StatusBadge status={item.status} />
             <TrustIndicator item={item} />
           </div>
-          <p className="text-xs text-gray-600 truncate">{item.nomenclature}</p>
-          <div className="flex items-center gap-3 mt-1.5 text-[11px] text-gray-500">
-            {so && <span>{so.supplierOrderNumber} — {so.supplier}</span>}
+          <p className="text-xs text-gray-600 break-words">{item.nomenclature}</p>
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1.5 text-[11px] text-gray-500">
+            {so && <span className="break-words">{so.supplierOrderNumber} — {so.supplier}</span>}
             {item.deadlines.deviation !== undefined && item.deadlines.deviation !== 0 && (
               <span className={item.deadlines.deviation > 0 ? 'text-red-600 font-medium' : 'text-emerald-600 font-medium'}>
                 Отклонение: {formatDeviation(item.deadlines.deviation)}
@@ -43,7 +43,7 @@ function AttentionCard({ item }: { item: ErpItem }) {
             </p>
           )}
         </div>
-        <div className="text-right shrink-0">
+        <div className="text-left sm:text-right shrink-0">
           {item.deadlines.deadline && (
             <div className="text-[11px] text-gray-500">
               Дедлайн: <span className="font-medium text-gray-700">{formatDate(item.deadlines.deadline)}</span>
@@ -79,7 +79,7 @@ export default function AttentionPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
         <h1 className="text-lg font-semibold text-gray-800">Требует внимания</h1>
         <span className="text-xs text-gray-500">{criticalItems.length + warningItems.length + noDataItems.length} записей</span>
       </div>

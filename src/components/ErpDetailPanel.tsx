@@ -14,10 +14,10 @@ function DetailSection({ label, children }: { label: string; children: React.Rea
 
 function DetailRow({ label, children, field, item }: { label: string; children: React.ReactNode; field?: string; item?: ErpItem }) {
   return (
-    <div className="flex items-center gap-2 py-1.5 border-b border-gray-50 last:border-0">
-      <span className="text-xs text-gray-500 w-36 shrink-0">{label}</span>
+    <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 py-1.5 border-b border-gray-50 last:border-0">
+      <span className="text-xs text-gray-500 sm:w-36 shrink-0">{label}</span>
       <div className="flex items-center gap-1.5 flex-1 min-w-0">
-        <span className="text-xs text-gray-800">{children}</span>
+        <span className="text-xs text-gray-800 break-words">{children}</span>
         {field && item && item.sources[field] && <SourcePopover field={field} item={item} />}
       </div>
     </div>
@@ -40,11 +40,11 @@ function ConflictDisplay({ item }: { item: ErpItem }) {
           </div>
           <div className="space-y-2">
             {conflict.values.map((v, i) => (
-              <div key={i} className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
+              <div key={i} className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex flex-wrap items-center gap-2 min-w-0">
                   <span className="text-xs font-mono font-medium">{formatDate(v.value)}</span>
                   <SourcePopover field={conflict.field} item={item} />
-                  <span className="text-[10px] text-gray-500">{v.source.details}</span>
+                  <span className="text-[10px] text-gray-500 break-words">{v.source.details}</span>
                 </div>
                 <button
                   onClick={() => resolveConflict(item.id, conflict.field, v.value)}
@@ -83,10 +83,10 @@ export default function ErpDetailPanel() {
   const so = item.supplierOrderId ? supplierOrders.find((o) => o.id === item.supplierOrderId) : null;
 
   return (
-    <div className="h-full flex flex-col bg-gray-50">
+    <div className="h-full min-h-0 flex-1 flex flex-col bg-gray-50">
       {/* Header */}
-      <div className="bg-white border-b border-gray-200 px-6 py-4 shrink-0">
-        <div className="flex items-center justify-between mb-1">
+      <div className="bg-white border-b border-gray-200 px-4 sm:px-6 py-4 shrink-0">
+        <div className="flex flex-wrap items-center justify-between gap-2 mb-1">
           <button
             onClick={() => navigateTo('orders')}
             className="text-[11px] text-gray-400 hover:text-gray-600 flex items-center gap-1"
@@ -98,9 +98,9 @@ export default function ErpDetailPanel() {
           </button>
           <TrustIndicator item={item} />
         </div>
-        <h1 className="text-lg font-semibold font-mono text-gray-800">{item.erpCode}</h1>
-        <p className="text-sm text-gray-500 mt-0.5">{item.nomenclature}</p>
-        <div className="flex items-center gap-3 mt-2">
+        <h1 className="text-lg font-semibold font-mono text-gray-800 break-all">{item.erpCode}</h1>
+        <p className="text-sm text-gray-500 mt-0.5 break-words">{item.nomenclature}</p>
+        <div className="flex flex-wrap items-center gap-2 sm:gap-3 mt-2">
           {so && (
             <button
               onClick={() => navigateTo('supplier-order-detail', { supplierOrderId: so.id })}
@@ -119,7 +119,7 @@ export default function ErpDetailPanel() {
       </div>
 
       {/* Scrollable content */}
-      <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
+      <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-4 space-y-4">
         {/* Conflicts */}
         <ConflictDisplay item={item} />
 

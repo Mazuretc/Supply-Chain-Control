@@ -26,7 +26,7 @@ export default function SourcesPage() {
     <div className="space-y-6">
       <h1 className="text-lg font-semibold text-gray-800">Источники данных</h1>
 
-      <div className="grid grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         <div className="bg-white border border-gray-200 rounded-lg p-4">
           <div className="text-2xl font-bold text-indigo-600">{sourceCounts.erp}</div>
           <div className="text-xs text-gray-500 mt-1">ERP</div>

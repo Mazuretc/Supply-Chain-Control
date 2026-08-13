@@ -121,7 +121,7 @@ export function SourceInfoCard({ source, onClose }: { source: DataSourceInfo; on
   return (
     <>
       <div className="fixed inset-0 z-30" onClick={onClose} />
-      <div className="absolute z-40 mt-1 w-72 bg-white border border-gray-200 rounded-lg shadow-xl p-3 text-xs">
+      <div className="absolute z-40 mt-1 w-72 max-w-[calc(100vw-2rem)] bg-white border border-gray-200 rounded-lg shadow-xl p-3 text-xs">
         <div className="font-semibold text-gray-800 mb-2">Источник: {source.label}</div>
         {source.emailSubject && <div className="mb-1 text-gray-600"><span className="text-gray-400">Тема: </span>{source.emailSubject}</div>}
         {source.emailFrom && <div className="mb-1 text-gray-600"><span className="text-gray-400">От: </span>{source.emailFrom}</div>}

@@ -117,7 +117,7 @@ function SupplierOrderGroup({ so }: { so: SupplierOrder }) {
         onClick={() => toggleGroup(so.id)}
       >
         <td className="py-2 px-3" colSpan={13}>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <button
               onClick={(e) => {
                 e.stopPropagation();
@@ -143,8 +143,8 @@ function SupplierOrderGroup({ so }: { so: SupplierOrder }) {
             >
               {so.supplierOrderNumber}
             </button>
-            <span className="text-xs text-gray-500">— {so.supplier}</span>
-            <span className="ml-auto flex items-center gap-2">
+            <span className="text-xs text-gray-500 min-w-0 truncate">— {so.supplier}</span>
+            <span className="ml-auto flex items-center gap-2 shrink-0">
               <StatusBadge status={so.status} />
               <span className="text-[11px] text-gray-400">{items.length} ERP-поз.</span>
             </span>
@@ -177,11 +177,11 @@ function KPISummary() {
   ];
 
   return (
-    <div className="flex items-center gap-6">
+    <div className="grid grid-cols-2 sm:flex sm:flex-wrap sm:items-center gap-3 sm:gap-x-6 sm:gap-y-2">
       {kpis.map((kpi) => (
-        <div key={kpi.label} className="flex items-baseline gap-1.5">
+        <div key={kpi.label} className="flex items-baseline gap-1.5 min-w-0">
           <span className={`text-lg font-bold ${kpi.color}`}>{kpi.value}</span>
-          <span className="text-[11px] text-gray-500 whitespace-nowrap">{kpi.label}</span>
+          <span className="text-[11px] text-gray-500">{kpi.label}</span>
         </div>
       ))}
     </div>
@@ -250,7 +250,7 @@ export default function OrderTable() {
       {/* Table */}
       <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full table-fixed">
+          <table className="w-full min-w-[1180px]">
             <thead>
               <tr className="border-b border-gray-200 bg-gray-50/50">
                 <th className="py-2.5 px-3 text-left text-[11px] font-semibold text-gray-500 uppercase tracking-wider w-[110px]">ERP-код</th>
