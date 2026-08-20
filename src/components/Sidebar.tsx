@@ -1,6 +1,8 @@
 import { PageView } from '../lib/types';
 import { useStore } from '../lib/store';
 import { useAuthStore } from '../lib/authStore';
+import BrandMark from './BrandMark';
+import BrandName from './BrandName';
 
 const navItems: { id: PageView; label: string; icon: string }[] = [
   { id: 'orders', label: 'Контроль заказов', icon: '📋' },
@@ -9,7 +11,15 @@ const navItems: { id: PageView; label: string; icon: string }[] = [
   { id: 'sources', label: 'Источники', icon: '📡' },
 ];
 
-export default function Sidebar({ open, onClose }: { open: boolean; onClose: () => void }) {
+export default function Sidebar({
+  open,
+  onClose,
+  lastSyncLabel,
+}: {
+  open: boolean;
+  onClose: () => void;
+  lastSyncLabel: string;
+}) {
   const currentPage = useStore((s) => s.currentPage);
   const navigateTo = useStore((s) => s.navigateTo);
   const user = useAuthStore((s) => s.user);
@@ -29,8 +39,8 @@ export default function Sidebar({ open, onClose }: { open: boolean; onClose: () 
       <div className="px-5 py-4 border-b border-white/10">
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-2 min-w-0">
-            <div className="w-7 h-7 rounded-md bg-indigo-500 flex items-center justify-center text-xs font-bold shrink-0">L</div>
-            <span className="font-semibold text-sm tracking-tight">Lovarus</span>
+            <BrandMark className="h-7 w-auto shrink-0 text-white" />
+            <BrandName className="text-sm leading-none truncate" tone="white" />
           </div>
           <button
             type="button"
@@ -64,10 +74,9 @@ export default function Sidebar({ open, onClose }: { open: boolean; onClose: () 
       <div className="px-5 py-3 border-t border-white/10 space-y-2">
         {user && (
           <div className="flex items-center justify-between gap-2">
-            <div className="min-w-0">
-              <div className="text-[11px] text-white/50 truncate">{user.login}</div>
-            </div>
+            <div className="text-[11px] text-white/50 truncate">{user.login}</div>
             <button
+              type="button"
               onClick={logout}
               className="shrink-0 text-[11px] text-white/40 hover:text-white transition-colors"
             >
@@ -75,9 +84,15 @@ export default function Sidebar({ open, onClose }: { open: boolean; onClose: () 
             </button>
           </div>
         )}
+        <a
+          href="/admin"
+          className="block text-[11px] text-white/40 hover:text-white transition-colors"
+        >
+          Администрирование
+        </a>
         <div className="text-[11px] text-white/30">
           <div>v0.1.0 MVP</div>
-          <div>Последняя синх.: 12.08.2026 14:32</div>
+          <div>Последняя синх.: {lastSyncLabel}</div>
         </div>
       </div>
     </aside>

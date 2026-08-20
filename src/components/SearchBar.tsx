@@ -18,7 +18,7 @@ export default function SearchBar() {
         type="text"
         value={searchQuery}
         onChange={(e) => setSearchQuery(e.target.value)}
-        placeholder="ERP-код, заказ, номенклатура..."
+        placeholder="ERP-код, заказ, клиент, номенклатура..."
         className="w-full pl-9 pr-4 py-2 text-sm border border-gray-200 rounded-lg bg-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-300 transition-colors"
       />
     </div>

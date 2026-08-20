@@ -1,14 +1,15 @@
 import { FormEvent, useState } from 'react';
 import { useAuthStore } from '../lib/authStore';
+import AuthRoleSwitch from './AuthRoleSwitch';
+import BrandMark from './BrandMark';
+import BrandName from './BrandName';
 
 function AuthBrand() {
   return (
     <div className="text-center mb-8">
       <div className="inline-flex items-center gap-2.5 mb-3">
-        <div className="w-9 h-9 rounded-lg bg-indigo-500 flex items-center justify-center text-sm font-bold text-white">
-          L
-        </div>
-        <span className="font-semibold text-xl text-gray-900 tracking-tight">Lovarus</span>
+        <BrandMark className="h-9 w-auto text-[#31356E]" />
+        <BrandName className="text-xl leading-none" />
       </div>
       <p className="text-sm text-gray-500">Supply Chain Control</p>
     </div>
@@ -55,6 +56,7 @@ export default function LoginPage() {
     <div className="h-full min-h-dvh overflow-y-auto bg-gray-50 flex items-center justify-center p-4">
       <div className="w-full max-w-sm my-auto">
         <AuthBrand />
+        <AuthRoleSwitch value="employee" />
 
         {authMode === 'login' ? (
           <form
@@ -62,8 +64,8 @@ export default function LoginPage() {
             className="bg-white border border-gray-200 rounded-xl shadow-sm p-6 space-y-4"
           >
             <div>
-              <h1 className="text-lg font-semibold text-gray-800">Вход в систему</h1>
-              <p className="text-xs text-gray-400 mt-1">Введите логин и пароль для доступа</p>
+              <h1 className="text-lg font-semibold text-gray-800">Вход сотрудника</h1>
+              <p className="text-xs text-gray-400 mt-1">Просмотр заказов и сроков</p>
             </div>
 
             {authError && (

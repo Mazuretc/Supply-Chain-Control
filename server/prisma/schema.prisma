@@ -1,0 +1,228 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum SourceType {
+  ERP
+  EMAIL
+  EXCEL
+  CALCULATION
+  MANUAL
+}
+
+enum JobStatus {
+  PENDING
+  RUNNING
+  SUCCEEDED
+  FAILED
+}
+
+model AdminUser {
+  id           String     @id @default(cuid())
+  singletonKey Int        @unique @default(1)
+  username     String     @unique
+  passwordHash String
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  auditEvents  AuditLog[]
+}
+
+model ServerSession {
+  sid    String   @id @db.VarChar
+  sess   Json
+  expire DateTime @db.Timestamp(6)
+
+  @@index([expire])
+  @@map("session")
+}
+
+model SupplierOrder {
+  id                  String         @id
+  supplierOrderNumber String         @unique
+  supplier            String
+  status              String
+  createdAt           DateTime       @db.Date
+  currentStage        String?
+  productionPlan      DateTime?      @db.Date
+  deadline            DateTime?      @db.Date
+  erpItems            ErpItem[]
+  deadlineValues      DeadlineValue[]
+  deadlineChanges     DeadlineChange[]
+}
+
+model ErpItem {
+  id              String         @id
+  erpCode         String         @unique
+  supplierOrderId String?
+  supplierOrder   SupplierOrder? @relation(fields: [supplierOrderId], references: [id], onDelete: SetNull)
+  nomenclature    String
+  status          String
+  currentStage    String
+  comment         String?
+  agreement       Json
+  production      Json
+  logistics       Json
+  deadlines       Json
+  problems        Json
+  sources         Json
+  missingFields   Json
+  conflicts       Json
+  trustLevel      String
+
+  @@index([supplierOrderId])
+}
+
+model MailAccount {
+  id                String        @id @default(cuid())
+  name              String
+  host              String
+  port              Int
+  secure            Boolean       @default(true)
+  username          String
+  encryptedPassword String
+  passwordIv        String
+  passwordAuthTag   String
+  enabled           Boolean       @default(true)
+  lastPolledAt      DateTime?
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+  messages          MailMessage[]
+}
+
+model MailMessage {
+  id             String             @id @default(cuid())
+  mailAccountId  String
+  mailAccount    MailAccount        @relation(fields: [mailAccountId], references: [id], onDelete: Cascade)
+  messageId      String?
+  contentHash    String
+  subject        String?
+  sender         String?
+  receivedAt     DateTime
+  body           String?
+  processedAt    DateTime?
+  ingestedAt     DateTime           @default(now())
+  attachments    MailAttachment[]
+  extractions    ExtractionResult[]
+  errors         ProcessingError[]
+
+  @@unique([mailAccountId, messageId])
+  @@unique([mailAccountId, contentHash])
+  @@index([receivedAt])
+}
+
+model MailAttachment {
+  id          String             @id @default(cuid())
+  messageId   String
+  message     MailMessage        @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  filename    String
+  contentType String
+  contentHash String
+  content     Bytes?
+  createdAt   DateTime           @default(now())
+  extractions ExtractionResult[]
+
+  @@unique([messageId, contentHash])
+}
+
+model ExtractionResult {
+  id              String          @id @default(cuid())
+  dedupeKey       String          @unique
+  messageId       String
+  message         MailMessage     @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  attachmentId    String?
+  attachment      MailAttachment? @relation(fields: [attachmentId], references: [id], onDelete: SetNull)
+  sourceType      SourceType
+  supplierOrderNo String?
+  field           String
+  value           String
+  evidence        String?
+  confidence      Float?
+  extractedAt     DateTime        @default(now())
+  deadlineValues  DeadlineValue[]
+}
+
+model DeadlineValue {
+  id              String           @id @default(cuid())
+  supplierOrderId String
+  supplierOrder   SupplierOrder    @relation(fields: [supplierOrderId], references: [id], onDelete: Cascade)
+  field           String
+  value           DateTime         @db.Date
+  sourceType      SourceType
+  sourceTime      DateTime
+  extractionId    String?
+  extraction      ExtractionResult? @relation(fields: [extractionId], references: [id], onDelete: SetNull)
+  isCurrent       Boolean          @default(false)
+  createdAt       DateTime         @default(now())
+
+  @@index([supplierOrderId, field, isCurrent])
+}
+
+model DeadlineChange {
+  id              String        @id @default(cuid())
+  supplierOrderId String
+  supplierOrder   SupplierOrder @relation(fields: [supplierOrderId], references: [id], onDelete: Cascade)
+  field           String
+  oldValue        DateTime?     @db.Date
+  newValue        DateTime      @db.Date
+  sourceType      SourceType
+  sourceReference String?
+  changedAt       DateTime      @default(now())
+
+  @@index([supplierOrderId, changedAt])
+}
+
+model Job {
+  id             String            @id @default(cuid())
+  type           String
+  key            String            @unique
+  status         JobStatus         @default(PENDING)
+  attempts       Int               @default(0)
+  payload        Json
+  availableAt    DateTime          @default(now())
+  startedAt      DateTime?
+  finishedAt     DateTime?
+  lastError      String?
+  leaseOwner     String?
+  leaseExpiresAt DateTime?
+  heartbeatAt    DateTime?
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+  errors         ProcessingError[]
+
+  @@index([status, availableAt, leaseExpiresAt])
+}
+
+model ProcessingError {
+  id        String       @id @default(cuid())
+  code      String
+  message   String
+  details   Json?
+  jobId     String?
+  job       Job?         @relation(fields: [jobId], references: [id], onDelete: SetNull)
+  messageId String?
+  mail      MailMessage? @relation(fields: [messageId], references: [id], onDelete: SetNull)
+  createdAt DateTime     @default(now())
+  resolvedAt DateTime?
+
+  @@index([createdAt])
+}
+
+model AuditLog {
+  id          String     @id @default(cuid())
+  actorId     String?
+  actor       AdminUser? @relation(fields: [actorId], references: [id], onDelete: SetNull)
+  action      String
+  entityType  String
+  entityId    String?
+  ipAddress   String?
+  metadata    Json?
+  createdAt   DateTime   @default(now())
+
+  @@index([createdAt])
+  @@index([entityType, entityId])
+}

@@ -1,0 +1,13 @@
+name: lovarus
+
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: lovarus-web:local
+    ports:
+      - "8080:80"
+    restart: unless-stopped
+    # Future API service should be named `api` and listen on 3000.
+    # nginx already proxies /api to http://api:3000.

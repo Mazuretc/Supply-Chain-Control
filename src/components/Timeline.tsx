@@ -1,5 +1,5 @@
 import { ErpItem } from '../lib/types';
-import { formatDate, SourcePopover, MissingData } from './ui';
+import { formatDate, SourcePopover } from './ui';
 
 interface TimelineStage {
   label: string;
@@ -77,7 +77,7 @@ function buildTimeline(item: ErpItem): TimelineStage[] {
       fieldKey: 'production.readyForShipment',
     },
     {
-      label: 'Отгрузка',
+      label: 'Фактическая дата отгрузки',
       plan: item.logistics.shipmentDeadline,
       fact: item.logistics.shipmentDate,
       status: item.logistics.shipmentDate
