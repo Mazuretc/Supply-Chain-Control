@@ -1,9 +1,10 @@
+import type { ReactNode } from 'react';
 import { useStore } from '../lib/store';
 import { ErpItem } from '../lib/types';
-import { StatusBadge, formatDate, formatDeviation, SourcePopover, MissingData, TrustIndicator, EditableField } from './ui';
+import { StatusBadge, formatDate, formatDeviation, SourcePopover, MissingData, TrustIndicator } from './ui';
 import Timeline from './Timeline';
 
-function DetailSection({ label, children }: { label: string; children: React.ReactNode }) {
+function DetailSection({ label, children }: { label: string; children: ReactNode }) {
   return (
     <div className="mb-4">
       <h4 className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-2">{label}</h4>
@@ -12,7 +13,7 @@ function DetailSection({ label, children }: { label: string; children: React.Rea
   );
 }
 
-function DetailRow({ label, children, field, item }: { label: string; children: React.ReactNode; field?: string; item?: ErpItem }) {
+function DetailRow({ label, children, field, item }: { label: string; children: ReactNode; field?: string; item?: ErpItem }) {
   return (
     <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 py-1.5 border-b border-gray-50 last:border-0">
       <span className="text-xs text-gray-500 sm:w-36 shrink-0">{label}</span>
@@ -25,7 +26,6 @@ function DetailRow({ label, children, field, item }: { label: string; children: 
 }
 
 function ConflictDisplay({ item }: { item: ErpItem }) {
-  const resolveConflict = useStore((s) => s.resolveConflict);
   if (item.conflicts.length === 0) return null;
 
   return (
@@ -46,16 +46,15 @@ function ConflictDisplay({ item }: { item: ErpItem }) {
                   <SourcePopover field={conflict.field} item={item} />
                   <span className="text-[10px] text-gray-500 break-words">{v.source.details}</span>
                 </div>
-                <button
-                  onClick={() => resolveConflict(item.id, conflict.field, v.value)}
+                <span
                   className={`text-[11px] px-2 py-0.5 rounded ${
                     conflict.selectedValue === v.value
                       ? 'bg-indigo-100 text-indigo-700 font-medium'
-                      : 'text-gray-500 hover:text-indigo-600 hover:bg-indigo-50'
+                      : 'text-gray-500'
                   }`}
                 >
-                  {conflict.selectedValue === v.value ? 'Выбрано ✓' : 'Выбрать'}
-                </button>
+                  {conflict.selectedValue === v.value ? 'Выбрано системой ✓' : 'Альтернативное значение'}
+                </span>
               </div>
             ))}
           </div>
@@ -74,8 +73,6 @@ export default function ErpDetailPanel() {
   const erpItems = useStore((s) => s.erpItems);
   const supplierOrders = useStore((s) => s.supplierOrders);
   const navigateTo = useStore((s) => s.navigateTo);
-  const updateErpField = useStore((s) => s.updateErpField);
-  const confirmValue = useStore((s) => s.confirmValue);
 
   const item = erpItems.find((i) => i.id === selectedErpId);
   if (!item) return null;
@@ -145,13 +142,8 @@ export default function ErpDetailPanel() {
           </DetailRow>
           <DetailRow label="Номенклатура">{item.nomenclature}</DetailRow>
           <DetailRow label="Поставщик">{so?.supplier ?? '—'}</DetailRow>
-          <DetailRow label="Комментарий">
-            <EditableField
-              value={item.comment}
-              onChange={(v) => updateErpField(item.id, 'comment', v)}
-              placeholder="Добавить комментарий"
-            />
-          </DetailRow>
+          <DetailRow label="Клиент">{item.client ?? '—'}</DetailRow>
+          <DetailRow label="Комментарий">{item.comment ?? '—'}</DetailRow>
         </DetailSection>
 
         {/* Согласование */}
@@ -160,21 +152,21 @@ export default function ErpDetailPanel() {
             {item.agreement.fileAgreementDeadline ? (
               formatDate(item.agreement.fileAgreementDeadline)
             ) : (
-              <MissingData field="agreement.fileAgreementDeadline" />
+              <MissingData />
             )}
           </DetailRow>
           <DetailRow label="Вопросы от завода" field="agreement.factoryQuestionsDate" item={item}>
             {item.agreement.factoryQuestionsDate ? (
               formatDate(item.agreement.factoryQuestionsDate)
             ) : (
-              <MissingData field="agreement.factoryQuestionsDate" />
+              <MissingData />
             )}
           </DetailRow>
           <DetailRow label="Ответы клиента" field="agreement.clientAnswersDate" item={item}>
             {item.agreement.clientAnswersDate ? (
               formatDate(item.agreement.clientAnswersDate)
             ) : (
-              <MissingData field="agreement.clientAnswersDate" />
+              <MissingData />
             )}
           </DetailRow>
           <DetailRow label="Дней ожидания ответа">
@@ -189,22 +181,22 @@ export default function ErpDetailPanel() {
         {/* Производство */}
         <DetailSection label="Производство">
           <DetailRow label="Срок производства (инвойс)" field="production.invoiceDeadline" item={item}>
-            {item.production.invoiceDeadline ? formatDate(item.production.invoiceDeadline) : <MissingData field="production.invoiceDeadline" />}
+            {item.production.invoiceDeadline ? formatDate(item.production.invoiceDeadline) : <MissingData />}
           </DetailRow>
           <DetailRow label="Запуск заказа поставщику" field="production.orderStartDate" item={item}>
-            {item.production.orderStartDate ? formatDate(item.production.orderStartDate) : <MissingData field="production.orderStartDate" />}
+            {item.production.orderStartDate ? formatDate(item.production.orderStartDate) : <MissingData />}
           </DetailRow>
           <DetailRow label="Запуск производства" field="production.productionStartDate" item={item}>
-            {item.production.productionStartDate ? formatDate(item.production.productionStartDate) : <MissingData field="production.productionStartDate" />}
+            {item.production.productionStartDate ? formatDate(item.production.productionStartDate) : <MissingData />}
           </DetailRow>
           <DetailRow label="Окончание Gold Plan" field="production.productionEndGoldPlan" item={item}>
             {item.production.productionEndGoldPlan ? formatDate(item.production.productionEndGoldPlan) : '—'}
           </DetailRow>
-          <DetailRow label="Окончание производства (план)" field="production.productionEndPlan" item={item}>
-            {item.production.productionEndPlan ? formatDate(item.production.productionEndPlan) : <MissingData field="production.productionEndPlan" />}
+          <DetailRow label="Дата окончания производства (Расчетная)" field="production.productionEndPlan" item={item}>
+            {item.production.productionEndPlan ? formatDate(item.production.productionEndPlan) : <MissingData />}
           </DetailRow>
           <DetailRow label="Окончание производства (факт)" field="production.productionEndFact" item={item}>
-            {item.production.productionEndFact ? formatDate(item.production.productionEndFact) : <MissingData field="production.productionEndFact" />}
+            {item.production.productionEndFact ? formatDate(item.production.productionEndFact) : <MissingData />}
           </DetailRow>
           <DetailRow label="Факт дней производства">
             {item.production.factProductionDays ? `${item.production.factProductionDays} дн` : '—'}
@@ -228,16 +220,16 @@ export default function ErpDetailPanel() {
         {/* Логистика */}
         <DetailSection label="Логистика">
           <DetailRow label="Срок до отгрузки" field="logistics.shipmentDeadline" item={item}>
-            {item.logistics.shipmentDeadline ? formatDate(item.logistics.shipmentDeadline) : <MissingData field="logistics.shipmentDeadline" />}
+            {item.logistics.shipmentDeadline ? formatDate(item.logistics.shipmentDeadline) : <MissingData />}
           </DetailRow>
           <DetailRow label="Номер поставки" field="logistics.deliveryNumber" item={item}>
             {item.logistics.deliveryNumber ? item.logistics.deliveryNumber : '—'}
           </DetailRow>
-          <DetailRow label="Дата отгрузки" field="logistics.shipmentDate" item={item}>
-            {item.logistics.shipmentDate ? formatDate(item.logistics.shipmentDate) : <MissingData field="logistics.shipmentDate" />}
+          <DetailRow label="Фактическая дата отгрузки" field="logistics.shipmentDate" item={item}>
+            {item.logistics.shipmentDate ? formatDate(item.logistics.shipmentDate) : <MissingData />}
           </DetailRow>
           <DetailRow label="Дата доставки" field="logistics.deliveryDate" item={item}>
-            {item.logistics.deliveryDate ? formatDate(item.logistics.deliveryDate) : <MissingData field="logistics.deliveryDate" />}
+            {item.logistics.deliveryDate ? formatDate(item.logistics.deliveryDate) : <MissingData />}
           </DetailRow>
           <DetailRow label="Дней на доставку">
             {item.logistics.deliveryDays ? `${item.logistics.deliveryDays} дн` : '—'}
@@ -278,26 +270,8 @@ export default function ErpDetailPanel() {
           <DetailRow label="Ответственный">
             {item.problems.responsible ?? <span className="text-gray-400">—</span>}
           </DetailRow>
-          <DetailRow label="Комментарий">
-            <EditableField
-              value={item.problems.comment}
-              onChange={(v) => updateErpField(item.id, 'problems.comment', v)}
-              placeholder="Добавить комментарий"
-            />
-          </DetailRow>
+          <DetailRow label="Комментарий">{item.problems.comment ?? '—'}</DetailRow>
         </DetailSection>
-
-        {/* Confirm button */}
-        {item.trustLevel !== 'confirmed' && (
-          <div className="flex items-center gap-2 pt-2">
-            <button
-              onClick={() => confirmValue(item.id, 'status')}
-              className="px-3 py-1.5 text-xs font-medium rounded-md bg-indigo-50 text-indigo-600 hover:bg-indigo-100"
-            >
-              Подтвердить данные
-            </button>
-          </div>
-        )}
       </div>
     </div>
   );

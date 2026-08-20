@@ -25,7 +25,7 @@ function AttentionCard({ item }: { item: ErpItem }) {
           </div>
           <p className="text-xs text-gray-600 break-words">{item.nomenclature}</p>
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1.5 text-[11px] text-gray-500">
-            {so && <span className="break-words">{so.supplierOrderNumber} — {so.supplier}</span>}
+            {so && <span className="break-words">{so.supplierOrderNumber} — {so.supplier}{item.client ? ` · ${item.client}` : ''}</span>}
             {item.deadlines.deviation !== undefined && item.deadlines.deviation !== 0 && (
               <span className={item.deadlines.deviation > 0 ? 'text-red-600 font-medium' : 'text-emerald-600 font-medium'}>
                 Отклонение: {formatDeviation(item.deadlines.deviation)}
@@ -62,20 +62,15 @@ function AttentionCard({ item }: { item: ErpItem }) {
 
 export default function AttentionPage() {
   const erpItems = useStore((s) => s.erpItems);
-  const navigateTo = useStore((s) => s.navigateTo);
 
   const criticalItems = erpItems.filter(
     (i) => i.status === 'производство_просрочено' || i.trustLevel === 'conflict'
   );
   const warningItems = erpItems.filter(
-    (i) =>
-      i.trustLevel === 'needs_review' &&
-      i.status !== 'производство_просрочено' &&
-      i.trustLevel !== 'conflict'
+    (i) => i.trustLevel === 'needs_review' && i.status !== 'производство_просрочено'
   );
-  const noDataItems = erpItems.filter(
-    (i) => i.missingFields.length > 0 && !criticalItems.includes(i) && !warningItems.includes(i)
-  );
+  const listedIds = new Set([...criticalItems, ...warningItems].map((i) => i.id));
+  const noDataItems = erpItems.filter((i) => i.missingFields.length > 0 && !listedIds.has(i.id));
 
   return (
     <div className="space-y-6">

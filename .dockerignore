@@ -1,0 +1,27 @@
+.git
+.cursor
+**/.env
+**/.env.*
+!**/.env.example
+node_modules
+**/node_modules
+dist
+**/dist
+server
+documents for testing
+deploy/iis
+deploy/monitoring
+deploy/postgresql
+deploy/release
+deploy/tasks
+deploy/windows-services
+deploy/tests
+docs
+*.md
+*.zip
+*.log
+tmp-*
+src/**/*.test.ts
+vitest.config.ts
+.DS_Store
+Thumbs.db

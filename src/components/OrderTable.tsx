@@ -1,140 +1,106 @@
-import { useState } from 'react';
 import { useStore } from '../lib/store';
 import { ErpItem, SupplierOrder } from '../lib/types';
-import { StatusBadge, formatDate, formatDeviation, SourcePopover, MissingData, TrustIndicator } from './ui';
+import { groupErpItems, itemMatchesFilter, matchesQuery, needsAttention, orderMatchesQuery } from '../lib/orderUtils';
+import { StatusBadge, formatDate, formatDeviation, MissingData } from './ui';
 
-/* ===== Helpers ===== */
-function getSupplierOrder(soId: string | null): SupplierOrder | undefined {
-  return useStore.getState().supplierOrders.find((so) => so.id === soId);
-}
+const headerCell =
+  'sticky top-0 z-10 py-2.5 px-3 text-left text-[11px] font-semibold text-gray-500 uppercase tracking-wider bg-gray-50 border-b border-gray-200 shadow-[inset_0_-1px_0_#e5e7eb]';
 
-function getErpItems(soId: string): ErpItem[] {
-  return useStore.getState().erpItems.filter((item) => item.supplierOrderId === soId);
-}
-
-function getUnlinked(): ErpItem[] {
-  return useStore.getState().erpItems.filter((item) => item.supplierOrderId === null);
-}
-
-/* ===== Deviation style ===== */
 function deviationStyle(dev?: number): string {
-  if (dev === undefined || dev === null) return '';
+  if (dev === undefined) return '';
   if (dev > 0) return 'text-red-600 font-medium';
   if (dev < 0) return 'text-emerald-600 font-medium';
   return 'text-gray-400';
 }
 
-/* ===== Single ERP row ===== */
-function ErpRow({ item, compact }: { item: ErpItem; compact?: boolean }) {
+function ErpRow({ item, order }: { item: ErpItem; order?: SupplierOrder }) {
   const navigateTo = useStore((s) => s.navigateTo);
-  const so = item.supplierOrderId ? getSupplierOrder(item.supplierOrderId) : null;
 
   return (
     <tr
-      className={`border-b border-gray-100 hover:bg-gray-50/50 cursor-pointer transition-colors ${
+      className={`hover:bg-gray-50/50 cursor-pointer transition-colors ${
         item.status === 'производство_просрочено' ? 'bg-red-50/30' : ''
       }`}
       onClick={() => navigateTo('erp-detail', { erpId: item.id })}
     >
-      <td className="py-2 px-3 text-xs">
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            navigateTo('erp-detail', { erpId: item.id });
-          }}
-          className="font-mono font-medium text-indigo-600 hover:text-indigo-800 hover:underline"
-        >
-          {item.erpCode}
-        </button>
+      <td className="py-2 px-3 text-xs border-b border-gray-100">
+        <span className="font-mono font-medium text-indigo-600">{item.erpCode}</span>
       </td>
-      {!compact && (
-        <td className="py-2 px-3 text-xs">
-          {so ? (
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                navigateTo('supplier-order-detail', { supplierOrderId: so.id });
-              }}
-              className="font-mono text-indigo-600 hover:text-indigo-800 hover:underline"
-            >
-              {so.supplierOrderNumber}
-            </button>
-          ) : (
-            <span className="text-amber-600 text-[11px]">Не связан</span>
-          )}
-        </td>
-      )}
-      <td className="py-2 px-3 text-xs text-gray-700 max-w-[200px] truncate" title={item.nomenclature}>
+      <td className="py-2 px-3 text-xs border-b border-gray-100">
+        {order ? (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              navigateTo('supplier-order-detail', { supplierOrderId: order.id });
+            }}
+            className="font-mono text-indigo-600 hover:text-indigo-800 hover:underline"
+          >
+            {order.supplierOrderNumber}
+          </button>
+        ) : (
+          <span className="text-amber-600 text-[11px]">Не связан</span>
+        )}
+      </td>
+      <td className="py-2 px-3 text-xs text-gray-700 max-w-[200px] truncate border-b border-gray-100" title={item.nomenclature}>
         {item.nomenclature}
       </td>
-      {!compact && (
-        <td className="py-2 px-3 text-xs text-gray-500 max-w-[140px] truncate" title={so?.supplier}>
-          {so?.supplier ?? '—'}
-        </td>
-      )}
-      <td className="py-2 px-3">
+      <td className="py-2 px-3 text-xs text-gray-500 max-w-[140px] truncate border-b border-gray-100" title={order?.supplier}>
+        {order?.supplier ?? '—'}
+      </td>
+      <td className="py-2 px-3 text-xs text-gray-700 max-w-[160px] truncate border-b border-gray-100" title={item.client}>
+        {item.client || '—'}
+      </td>
+      <td className="py-2 px-3 border-b border-gray-100">
         <StatusBadge status={item.status} />
       </td>
-      <td className="py-2 px-3 text-xs text-gray-600">{item.currentStage}</td>
-      <td className="py-2 px-3 text-xs text-gray-800 font-medium">
-        {item.production.productionEndPlan ? formatDate(item.production.productionEndPlan) : <MissingData field="productionEndPlan" />}
+      <td className="py-2 px-3 text-xs text-gray-600 border-b border-gray-100">{item.currentStage}</td>
+      <td className="py-2 px-3 text-xs text-gray-800 font-medium border-b border-gray-100">
+        {item.production.productionEndPlan ? formatDate(item.production.productionEndPlan) : <MissingData />}
       </td>
-      <td className="py-2 px-3 text-xs">
+      <td className="py-2 px-3 text-xs border-b border-gray-100">
         {item.production.readyForShipment ? (
           <span className="text-emerald-600 font-medium">{item.logistics.shipmentDate ? formatDate(item.logistics.shipmentDate) : 'Не указана'}</span>
         ) : (
           <span className="text-gray-400">—</span>
         )}
       </td>
-      <td className="py-2 px-3 text-xs">{item.logistics.shipmentDate ? formatDate(item.logistics.shipmentDate) : <span className="text-gray-400">—</span>}</td>
-      <td className="py-2 px-3 text-xs">{item.logistics.deliveryDate ? formatDate(item.logistics.deliveryDate) : <span className="text-gray-400">—</span>}</td>
-      <td className="py-2 px-3 text-xs font-medium text-gray-800">
+      <td className="py-2 px-3 text-xs border-b border-gray-100">{item.logistics.shipmentDate ? formatDate(item.logistics.shipmentDate) : <span className="text-gray-400">—</span>}</td>
+      <td className="py-2 px-3 text-xs border-b border-gray-100">{item.logistics.deliveryDate ? formatDate(item.logistics.deliveryDate) : <span className="text-gray-400">—</span>}</td>
+      <td className="py-2 px-3 text-xs font-medium text-gray-800 border-b border-gray-100">
         {item.deadlines.deadline ? formatDate(item.deadlines.deadline) : <span className="text-gray-400">—</span>}
       </td>
-      <td className={`py-2 px-3 text-xs ${deviationStyle(item.deadlines.deviation)}`}>
+      <td className={`py-2 px-3 text-xs border-b border-gray-100 ${deviationStyle(item.deadlines.deviation)}`}>
         {formatDeviation(item.deadlines.deviation) ?? <span className="text-gray-400">—</span>}
       </td>
-      <td className="py-2 px-3 text-xs text-gray-500 max-w-[120px] truncate" title={item.problems.reason}>
+      <td className="py-2 px-3 text-xs text-gray-500 max-w-[120px] truncate border-b border-gray-100" title={item.problems.reason}>
         {item.problems.reason ?? <span className="text-gray-400">—</span>}
       </td>
     </tr>
   );
 }
 
-/* ===== Supplier order group ===== */
-function SupplierOrderGroup({ so }: { so: SupplierOrder }) {
+function SupplierOrderGroup({ so, items }: { so: SupplierOrder; items: ErpItem[] }) {
   const expandedGroups = useStore((s) => s.expandedGroups);
   const toggleGroup = useStore((s) => s.toggleGroup);
   const navigateTo = useStore((s) => s.navigateTo);
-  const items = getErpItems(so.id);
   const isExpanded = expandedGroups.has(so.id);
 
   return (
     <>
-      {/* Group header */}
       <tr
-        className="border-b border-gray-200 bg-gray-50/80 hover:bg-gray-100/60 cursor-pointer"
+        className="bg-gray-50/80 hover:bg-gray-100/60 cursor-pointer"
         onClick={() => toggleGroup(so.id)}
       >
-        <td className="py-2 px-3" colSpan={13}>
+        <td className="py-2 px-3 border-b border-gray-200" colSpan={14}>
           <div className="flex flex-wrap items-center gap-2">
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                toggleGroup(so.id);
-              }}
-              className="w-4 h-4 flex items-center justify-center text-gray-400 hover:text-gray-600 transition-transform"
-            >
-              <svg
-                className={`w-3 h-3 transition-transform ${isExpanded ? 'rotate-90' : ''}`}
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
+            <span className={`w-4 h-4 flex items-center justify-center text-gray-400 ${isExpanded ? 'rotate-90' : ''} transition-transform`}>
+              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
               </svg>
-            </button>
+            </span>
             <button
+              type="button"
               onClick={(e) => {
                 e.stopPropagation();
                 navigateTo('supplier-order-detail', { supplierOrderId: so.id });
@@ -144,6 +110,7 @@ function SupplierOrderGroup({ so }: { so: SupplierOrder }) {
               {so.supplierOrderNumber}
             </button>
             <span className="text-xs text-gray-500 min-w-0 truncate">— {so.supplier}</span>
+            {so.client && <span className="text-xs text-gray-600 min-w-0 truncate">· {so.client}</span>}
             <span className="ml-auto flex items-center gap-2 shrink-0">
               <StatusBadge status={so.status} />
               <span className="text-[11px] text-gray-400">{items.length} ERP-поз.</span>
@@ -151,19 +118,16 @@ function SupplierOrderGroup({ so }: { so: SupplierOrder }) {
           </div>
         </td>
       </tr>
-      {/* Group items */}
       {isExpanded && items.map((item) => (
-        <ErpRow key={item.id} item={item} />
+        <ErpRow key={item.id} item={item} order={so} />
       ))}
     </>
   );
 }
 
-/* ===== KPI summary ===== */
-function KPISummary() {
-  const items = useStore((s) => s.erpItems);
+function KPISummary({ items }: { items: ErpItem[] }) {
   const total = items.length;
-  const attention = items.filter((i) => i.status === 'производство_просрочено' || i.trustLevel === 'conflict' || i.trustLevel === 'needs_review').length;
+  const attention = items.filter(needsAttention).length;
   const overdue = items.filter((i) => i.status === 'производство_просрочено').length;
   const ready = items.filter((i) => i.status === 'готово' || i.status === 'ожидает_отгрузки').length;
   const noData = items.filter((i) => i.missingFields.length > 0).length;
@@ -188,97 +152,61 @@ function KPISummary() {
   );
 }
 
-/* ===== Main table ===== */
 export default function OrderTable() {
   const searchQuery = useStore((s) => s.searchQuery);
   const activeFilter = useStore((s) => s.activeFilter);
   const supplierOrders = useStore((s) => s.supplierOrders);
   const erpItems = useStore((s) => s.erpItems);
-  const navigateTo = useStore((s) => s.navigateTo);
+  const query = searchQuery.trim().toLowerCase();
+  const { byOrder, unlinked } = groupErpItems(erpItems);
 
-  /* Filter logic */
   const filteredOrders = supplierOrders.filter((so) => {
-    const items = getErpItems(so.id);
-    const matchesSearch =
-      !searchQuery ||
-      so.supplierOrderNumber.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      so.supplier.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      items.some(
-        (item) =>
-          item.erpCode.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          item.nomenclature.toLowerCase().includes(searchQuery.toLowerCase())
-      );
-
-    if (!matchesSearch) return false;
-
-    switch (activeFilter) {
-      case 'attention':
-        return items.some((i) => i.status === 'производство_просрочено' || i.trustLevel === 'conflict' || i.trustLevel === 'needs_review');
-      case 'overdue':
-        return items.some((i) => i.status === 'производство_просрочено');
-      case 'no_data':
-        return items.some((i) => i.missingFields.length > 0);
-      case 'waiting_client':
-        return items.some((i) => i.status === 'ожидаем_клиента');
-      case 'in_production':
-        return items.some((i) => i.status === 'в_производстве');
-      case 'ready_to_ship':
-        return items.some((i) => i.status === 'готово' || i.status === 'ожидает_отгрузки');
-      case 'in_delivery':
-        return items.some((i) => i.status === 'в_доставке');
-      case 'delivered':
-        return items.some((i) => i.status === 'доставлено');
-      default:
-        return true;
-    }
+    const items = byOrder.get(so.id) ?? [];
+    if (!orderMatchesQuery(so, items, query)) return false;
+    return activeFilter === 'all' || items.some((item) => itemMatchesFilter(item, activeFilter));
   });
 
-  const unlinkedItems = erpItems.filter((item) => {
-    if (item.supplierOrderId !== null) return false;
-    return (
-      !searchQuery ||
-      item.erpCode.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.nomenclature.toLowerCase().includes(searchQuery.toLowerCase())
-    );
-  });
+  const unlinkedItems = unlinked.filter(
+    (item) => !query || matchesQuery(item.erpCode, query) || matchesQuery(item.nomenclature, query) || (item.client ? matchesQuery(item.client, query) : false)
+  );
 
   return (
-    <div className="space-y-4">
-      {/* KPI */}
-      <KPISummary />
+    <div className="h-full min-h-0 flex flex-col gap-4">
+      <div className="shrink-0">
+        <KPISummary items={erpItems} />
+      </div>
 
-      {/* Table */}
-      <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[1180px]">
+      <div className="flex-1 min-h-0 bg-white border border-gray-200 rounded-lg overflow-hidden">
+        <div className="h-full overflow-auto">
+          <table className="w-full min-w-[1540px] border-separate border-spacing-0">
             <thead>
-              <tr className="border-b border-gray-200 bg-gray-50/50">
-                <th className="py-2.5 px-3 text-left text-[11px] font-semibold text-gray-500 uppercase tracking-wider w-[110px]">ERP-код</th>
-                <th className="py-2.5 px-3 text-left text-[11px] font-semibold text-gray-500 uppercase tracking-wider w-[140px]">Заказ поставщику</th>
-                <th className="py-2.5 px-3 text-left text-[11px] font-semibold text-gray-500 uppercase tracking-wider">Номенклатура</th>
-                <th className="py-2.5 px-3 text-left text-[11px] font-semibold text-gray-500 uppercase tracking-wider w-[140px]">Поставщик</th>
-                <th className="py-2.5 px-3 text-left text-[11px] font-semibold text-gray-500 uppercase tracking-wider w-[130px]">Статус</th>
-                <th className="py-2.5 px-3 text-left text-[11px] font-semibold text-gray-500 uppercase tracking-wider w-[130px]">Текущий этап</th>
-                <th className="py-2.5 px-3 text-left text-[11px] font-semibold text-gray-500 uppercase tracking-wider w-[100px]">План оконч. произв.</th>
-                <th className="py-2.5 px-3 text-left text-[11px] font-semibold text-gray-500 uppercase tracking-wider w-[100px]">Готовность к отгр.</th>
-                <th className="py-2.5 px-3 text-left text-[11px] font-semibold text-gray-500 uppercase tracking-wider w-[90px]">Дата отгрузки</th>
-                <th className="py-2.5 px-3 text-left text-[11px] font-semibold text-gray-500 uppercase tracking-wider w-[90px]">Дата доставки</th>
-                <th className="py-2.5 px-3 text-left text-[11px] font-semibold text-gray-500 uppercase tracking-wider w-[85px]">Дедлайн</th>
-                <th className="py-2.5 px-3 text-left text-[11px] font-semibold text-gray-500 uppercase tracking-wider w-[70px]">Отклонение</th>
-                <th className="py-2.5 px-3 text-left text-[11px] font-semibold text-gray-500 uppercase tracking-wider">Причина срыва</th>
+              <tr>
+                <th className={`${headerCell} w-[110px]`}>ERP-код</th>
+                <th className={`${headerCell} w-[140px]`}>Заказ поставщику</th>
+                <th className={headerCell}>Номенклатура</th>
+                <th className={`${headerCell} w-[140px]`}>Поставщик</th>
+                <th className={`${headerCell} w-[160px]`}>Клиент</th>
+                <th className={`${headerCell} w-[130px]`}>Статус</th>
+                <th className={`${headerCell} w-[130px]`}>Текущий этап</th>
+                <th className={`${headerCell} w-[160px]`}>Дата окончания производства (Расчетная)</th>
+                <th className={`${headerCell} w-[100px]`}>Готовность к отгр.</th>
+                <th className={`${headerCell} w-[140px]`}>Фактическая дата отгрузки</th>
+                <th className={`${headerCell} w-[90px]`}>Дата доставки</th>
+                <th className={`${headerCell} w-[85px]`}>Дедлайн</th>
+                <th className={`${headerCell} w-[70px]`}>Отклонение</th>
+                <th className={headerCell}>Причина срыва</th>
               </tr>
             </thead>
             <tbody>
               {filteredOrders.map((so) => (
-                <SupplierOrderGroup key={so.id} so={so} />
+                <SupplierOrderGroup key={so.id} so={so} items={byOrder.get(so.id) ?? []} />
               ))}
-              {/* Unlinked items */}
               {unlinkedItems.map((item) => (
                 <ErpRow key={item.id} item={item} />
               ))}
               {filteredOrders.length === 0 && unlinkedItems.length === 0 && (
                 <tr>
-                  <td colSpan={13} className="py-8 text-center text-sm text-gray-400">
+                  <td colSpan={14} className="py-8 text-center text-sm text-gray-400">
                     Ничего не найдено
                   </td>
                 </tr>

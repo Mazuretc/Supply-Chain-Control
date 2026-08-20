@@ -1,9 +1,7 @@
 import { useState } from 'react';
-import { DataSourceInfo, ErpItem, ErpStatus } from '../lib/types';
-import { useStore } from '../lib/store';
+import { DataSourceInfo, ErpItem, OrderStatus } from '../lib/types';
 
-/* ===== Status badge ===== */
-const statusStyles: Record<string, string> = {
+const statusStyles: Record<OrderStatus, string> = {
   согласование: 'bg-amber-50 text-amber-700 ring-amber-600/20',
   ожидаем_клиента: 'bg-amber-50 text-amber-700 ring-amber-600/20',
   заказ_размещён: 'bg-sky-50 text-sky-700 ring-sky-600/20',
@@ -16,7 +14,7 @@ const statusStyles: Record<string, string> = {
   требует_данных: 'bg-gray-100 text-gray-600 ring-gray-400/20',
 };
 
-const statusLabels: Record<string, string> = {
+const statusLabels: Record<OrderStatus, string> = {
   согласование: 'Согласование',
   ожидаем_клиента: 'Ожидаем клиента',
   заказ_размещён: 'Заказ размещён',
@@ -29,16 +27,14 @@ const statusLabels: Record<string, string> = {
   требует_данных: 'Требует данных',
 };
 
-export function StatusBadge({ status }: { status: ErpStatus }) {
-  const style = statusStyles[status] ?? 'bg-gray-100 text-gray-600 ring-gray-400/20';
+export function StatusBadge({ status }: { status: OrderStatus }) {
   return (
-    <span className={`inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium ring-1 ring-inset whitespace-nowrap ${style}`}>
-      {statusLabels[status] ?? status}
+    <span className={`inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium ring-1 ring-inset whitespace-nowrap ${statusStyles[status]}`}>
+      {statusLabels[status]}
     </span>
   );
 }
 
-/* ===== Date formatting ===== */
 export function formatDate(d?: string): string {
   if (!d) return '—';
   const parts = d.split('-');
@@ -47,38 +43,11 @@ export function formatDate(d?: string): string {
 }
 
 export function formatDeviation(dev?: number): string | null {
-  if (dev === undefined || dev === null) return null;
+  if (dev === undefined) return null;
   if (dev === 0) return '0 дн';
   return `${dev > 0 ? '+' : ''}${dev} дн`;
 }
 
-/* ===== Plan vs fact cell ===== */
-export function PlanFactCell({ plan, fact }: { plan?: string; fact?: string }) {
-  const hasPlan = !!plan;
-  const hasFact = !!fact;
-  if (!hasPlan && !hasFact) {
-    return <span className="text-xs text-gray-400 italic">Не найдено</span>;
-  }
-  return (
-    <div className="space-y-0.5">
-      {hasPlan && (
-        <div className="text-xs text-gray-600">
-          <span className="text-gray-400">План: </span>
-          {formatDate(plan)}
-        </div>
-      )}
-      {hasFact && (
-        <div className="text-xs font-medium text-gray-800">
-          <span className="text-gray-400">Факт: </span>
-          {formatDate(fact)}
-        </div>
-      )}
-      {!hasFact && hasPlan && <span className="text-[10px] text-gray-400">нет факта</span>}
-    </div>
-  );
-}
-
-/* ===== SourceIndicator ===== */
 const sourceColors: Record<string, string> = {
   erp: 'bg-indigo-50 text-indigo-600 ring-indigo-600/20',
   email: 'bg-emerald-50 text-emerald-600 ring-emerald-600/20',
@@ -86,11 +55,9 @@ const sourceColors: Record<string, string> = {
   manual: 'bg-gray-100 text-gray-600 ring-gray-400/20',
 };
 
-export function SourceBadge({ source }: { source?: DataSourceInfo }) {
-  if (!source) return null;
-  const color = sourceColors[source.type] ?? 'bg-gray-100 text-gray-600';
+function SourceBadge({ source }: { source: DataSourceInfo }) {
   return (
-    <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold ring-1 ring-inset ${color}`}>
+    <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold ring-1 ring-inset ${sourceColors[source.type] ?? 'bg-gray-100 text-gray-600'}`}>
       {source.label}
     </span>
   );
@@ -104,9 +71,10 @@ export function SourcePopover({ field, item }: { field: string; item: ErpItem })
   return (
     <span className="relative inline-flex">
       <button
+        type="button"
         onClick={(e) => {
           e.stopPropagation();
-          setOpen(!open);
+          setOpen((v) => !v);
         }}
         className="inline-flex items-center gap-1"
       >
@@ -117,7 +85,7 @@ export function SourcePopover({ field, item }: { field: string; item: ErpItem })
   );
 }
 
-export function SourceInfoCard({ source, onClose }: { source: DataSourceInfo; onClose: () => void }) {
+function SourceInfoCard({ source, onClose }: { source: DataSourceInfo; onClose: () => void }) {
   return (
     <>
       <div className="fixed inset-0 z-30" onClick={onClose} />
@@ -131,20 +99,12 @@ export function SourceInfoCard({ source, onClose }: { source: DataSourceInfo; on
         {source.recordId && <div className="mb-1 text-gray-600"><span className="text-gray-400">ID: </span>{source.recordId}</div>}
         {source.updatedAt && <div className="mb-1 text-gray-600"><span className="text-gray-400">Обновлено: </span>{formatDate(source.updatedAt)}</div>}
         {source.details && <div className="mb-2 text-gray-500">{source.details}</div>}
-        <a
-          href="#"
-          onClick={(e) => e.preventDefault()}
-          className="inline-block mt-1 px-3 py-1.5 rounded-md bg-indigo-50 text-indigo-600 font-medium hover:bg-indigo-100"
-        >
-          Открыть источник
-        </a>
       </div>
     </>
   );
 }
 
-/* ===== Missing data indicator ===== */
-export function MissingData({ field }: { field: string }) {
+export function MissingData() {
   return (
     <span className="inline-flex items-center gap-1 text-[11px] text-amber-600">
       <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -155,7 +115,6 @@ export function MissingData({ field }: { field: string }) {
   );
 }
 
-/* ===== Trust indicator ===== */
 export function TrustIndicator({ item }: { item: ErpItem }) {
   if (item.trustLevel === 'conflict') {
     return (
@@ -173,7 +132,7 @@ export function TrustIndicator({ item }: { item: ErpItem }) {
         <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.9 5h13.8a2 2 0 001.4-3.4L13.4 4.6a2 2 0 00-2.8 0L3.7 16.6a2 2 0 001.4 3.4z" />
         </svg>
-        ⚠ Требует проверки
+        Требует проверки
       </span>
     );
   }
@@ -185,42 +144,4 @@ export function TrustIndicator({ item }: { item: ErpItem }) {
       Подтверждено
     </span>
   );
-}
-
-/* ===== Editable date field ===== */
-export function EditableField({
-  value,
-  onChange,
-  missing,
-  placeholder,
-}: {
-  value?: string;
-  onChange: (v: string) => void;
-  missing?: boolean;
-  placeholder?: string;
-}) {
-  if (value) {
-    return (
-      <input
-        type="date"
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        className="text-xs border border-gray-200 rounded px-1.5 py-0.5 focus:outline-none focus:ring-1 focus:ring-indigo-500 w-auto"
-      />
-    );
-  }
-  if (missing) {
-    return (
-      <button
-        onClick={() => onChange('')}
-        className="text-[11px] text-amber-600 hover:text-amber-700 inline-flex items-center gap-1"
-      >
-        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeWidth={2} d="M12 9v3m0 4h.01M12 3a9 9 0 110 18 9 9 0 010-18z" />
-        </svg>
-        {placeholder ?? 'Требует заполнения'}
-      </button>
-    );
-  }
-  return <span className="text-xs text-gray-400">—</span>;
 }

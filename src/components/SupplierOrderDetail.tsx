@@ -26,7 +26,7 @@ export default function SupplierOrderDetail() {
           Назад к списку
         </button>
         <h1 className="text-lg font-semibold font-mono text-gray-800 break-words">Заказ поставщику {so.supplierOrderNumber}</h1>
-        <p className="text-sm text-gray-500 mt-0.5">{so.supplier}</p>
+        <p className="text-sm text-gray-500 mt-0.5">{so.supplier}{so.client ? ` · ${so.client}` : ''}</p>
         <div className="flex flex-wrap items-center gap-2 sm:gap-3 mt-2">
           <StatusBadge status={so.status} />
           <span className="text-xs text-gray-500">Дата создания: {formatDate(so.createdAt)}</span>
@@ -46,6 +46,10 @@ export default function SupplierOrderDetail() {
               <span className="text-xs text-gray-800 min-w-0 break-words">{so.supplier}</span>
             </div>
             <div className="flex items-center gap-2 min-w-0">
+              <span className="text-xs text-gray-500 w-32 shrink-0">Клиент</span>
+              <span className="text-xs text-gray-800 min-w-0 break-words">{so.client ?? '—'}</span>
+            </div>
+            <div className="flex items-center gap-2 min-w-0">
               <span className="text-xs text-gray-500 w-32 shrink-0">Дата создания</span>
               <span className="text-xs text-gray-800">{formatDate(so.createdAt)}</span>
             </div>
@@ -54,7 +58,7 @@ export default function SupplierOrderDetail() {
               <StatusBadge status={so.status} />
             </div>
             <div className="flex items-center gap-2 min-w-0">
-              <span className="text-xs text-gray-500 w-32 shrink-0">План производства</span>
+              <span className="text-xs text-gray-500 w-48 shrink-0">Дата окончания производства (Расчетная)</span>
               <span className="text-xs text-gray-800">{formatDate(so.productionPlan)}</span>
             </div>
             <div className="flex items-center gap-2 min-w-0">
@@ -79,8 +83,9 @@ export default function SupplierOrderDetail() {
               <tr className="border-b border-gray-100 bg-gray-50/50">
                 <th className="py-2 px-3 text-left text-[11px] font-semibold text-gray-500 uppercase tracking-wider">ERP-код</th>
                 <th className="py-2 px-3 text-left text-[11px] font-semibold text-gray-500 uppercase tracking-wider">Номенклатура</th>
+                <th className="py-2 px-3 text-left text-[11px] font-semibold text-gray-500 uppercase tracking-wider">Клиент</th>
                 <th className="py-2 px-3 text-left text-[11px] font-semibold text-gray-500 uppercase tracking-wider">Статус</th>
-                <th className="py-2 px-3 text-left text-[11px] font-semibold text-gray-500 uppercase tracking-wider">План производства</th>
+                <th className="py-2 px-3 text-left text-[11px] font-semibold text-gray-500 uppercase tracking-wider">Дата окончания производства (Расчетная)</th>
                 <th className="py-2 px-3 text-left text-[11px] font-semibold text-gray-500 uppercase tracking-wider">Отклонение</th>
               </tr>
             </thead>
@@ -92,17 +97,10 @@ export default function SupplierOrderDetail() {
                   onClick={() => navigateTo('erp-detail', { erpId: item.id })}
                 >
                   <td className="py-2 px-3">
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        navigateTo('erp-detail', { erpId: item.id });
-                      }}
-                      className="font-mono text-xs text-indigo-600 hover:text-indigo-800 hover:underline"
-                    >
-                      {item.erpCode}
-                    </button>
+                    <span className="font-mono text-xs text-indigo-600">{item.erpCode}</span>
                   </td>
                   <td className="py-2 px-3 text-xs text-gray-700 max-w-[240px] truncate" title={item.nomenclature}>{item.nomenclature}</td>
+                  <td className="py-2 px-3 text-xs text-gray-700 max-w-[180px] truncate" title={item.client}>{item.client ?? '—'}</td>
                   <td className="py-2 px-3"><StatusBadge status={item.status} /></td>
                   <td className="py-2 px-3 text-xs text-gray-800">{formatDate(item.production.productionEndPlan)}</td>
                   <td className={`py-2 px-3 text-xs ${item.deadlines.deviation && item.deadlines.deviation > 0 ? 'text-red-600 font-medium' : 'text-gray-400'}`}>
